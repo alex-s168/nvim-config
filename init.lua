@@ -130,7 +130,8 @@ keymap("n", "<C-l>", ":NvimTreeToggle<CR>", {})
 local harpoon = require("harpoon")
 harpoon:setup()
 
--- basic telescope configuration
+vim.keymap.set("n", "<leader>a", function() harpoon:list():add() end)
+
 local conf = require("telescope.config").values
 local function toggle_telescope(harpoon_files)
     local file_paths = {}
@@ -150,6 +151,8 @@ end
 
 vim.keymap.set("n", "<C-e>", function() toggle_telescope(harpoon:list()) end,
     { desc = "Open harpoon window" })
+
+vim.keymap.set("n", "<C-w>", ":Telescope find_files<CR>", {})
 
 local cmp = require 'cmp'
 cmp.setup {
