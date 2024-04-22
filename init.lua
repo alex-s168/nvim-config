@@ -59,8 +59,11 @@ require("lazy").setup({
     version = "v2.3.0",
     -- install jsregexp (optional!).
     build = "make install_jsregexp"
-  }
+  },
+  {'akinsho/toggleterm.nvim', version = "*", config = true}
 })
+
+require("toggleterm").setup{}
 
 require("mason").setup({
   ui = {

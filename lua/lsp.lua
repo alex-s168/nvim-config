@@ -1,17 +1,40 @@
 require("mason-lspconfig").setup {
-    ensure_installed = { "clangd", "lua_ls" },
+    ensure_installed = {
+        "clangd",
+        "lua_ls",
+        "tsserver",
+        "asm_lsp",
+        "pylsp",
+        "rust_analyzer",
+        "typos_lsp",
+        "bashls",
+        "cmake",
+        "kotlin_language_server",
+        "vls",
+        "zls",
+    },
 }
 
 local lspconfig = require('lspconfig')
 
 lspconfig.clangd.setup {}
 lspconfig.lua_ls.setup {}
+lspconfig.tsserver.setup {}
+lspconfig.asm_lsp.setup {}
+lspconfig.pylsp.setup {}
+lspconfig.rust_analyzer.setup {}
+lspconfig.typos_lsp.setup {}
+lspconfig.bashls.setup {}
+lspconfig.cmake.setup {}
+lspconfig.kotlin_language_server.setup {}
+lspconfig.vls.setup {}
+lspconfig.zls.setup {}
 
 -- Global mappings.
 -- See `:help vim.diagnostic.*` for documentation on any of the below functions
 vim.keymap.set('n', '<space>e', vim.diagnostic.open_float)
-vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
-vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
+vim.keymap.set('n', '[', vim.diagnostic.goto_prev)
+vim.keymap.set('n', ']', vim.diagnostic.goto_next)
 vim.keymap.set('n', '<space>q', vim.diagnostic.setloclist)
 
 -- Use LspAttach autocommand to only map the following keys
