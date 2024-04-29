@@ -2,33 +2,48 @@ require("mason-lspconfig").setup {
     ensure_installed = {
         "clangd",
         "lua_ls",
-        "tsserver",
+        --"tsserver",
         "asm_lsp",
-        "pylsp",
+        --"pylsp",
         "rust_analyzer",
         "typos_lsp",
-        "bashls",
-        "cmake",
+        --"bashls",
+        --"cmake",
         "kotlin_language_server",
         "vls",
         "zls",
+        "gopls",
     },
 }
 
 local lspconfig = require('lspconfig')
 
+
+require('lspconfig.configs').sq = {
+  default_config = {
+    cmd = {"C:/Users/Alexander.Nutz/sequencia-real/sqlsp/sqlsp.exe"},
+    filetypes = {"sq"},
+    settings = {},
+    single_file_support = true,
+  };
+}
+lspconfig.sq.setup {}
+vim.cmd([[autocmd BufRead,BufNewFile *.sq setfiletype sq]])
+
 lspconfig.clangd.setup {}
 lspconfig.lua_ls.setup {}
 lspconfig.tsserver.setup {}
 lspconfig.asm_lsp.setup {}
-lspconfig.pylsp.setup {}
+--lspconfig.pylsp.setup {}
 lspconfig.rust_analyzer.setup {}
 lspconfig.typos_lsp.setup {}
-lspconfig.bashls.setup {}
-lspconfig.cmake.setup {}
+--lspconfig.bashls.setup {}
+--lspconfig.cmake.setup {}
 lspconfig.kotlin_language_server.setup {}
 lspconfig.vls.setup {}
 lspconfig.zls.setup {}
+lspconfig.gopls.setup {}
+lspconfig.gleam.setup {}
 
 -- Global mappings.
 -- See `:help vim.diagnostic.*` for documentation on any of the below functions
