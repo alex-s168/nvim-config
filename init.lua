@@ -1,6 +1,3 @@
-vim.g.loaded_netrw = 1
-vim.g.loaded_netrwPlugin = 1
-
 vim.opt.termguicolors = true
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -21,9 +18,14 @@ require("lazy").setup({
   { "EdenEast/nightfox.nvim" },
   { "williamboman/mason-lspconfig.nvim" },
   { "neovim/nvim-lspconfig" },
-  { "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {} },
+  {
+      "lukas-reineke/indent-blankline.nvim",
+      main = "ibl",
+      opts = {},
+      version = "v3.5.4"
+  },
   { "nvim-tree/nvim-web-devicons" },
-  { "nvim-tree/nvim-tree.lua" },
+  { "stevearc/oil.nvim" },
   {
     "ThePrimeagen/harpoon",
     branch = "harpoon2",
@@ -37,19 +39,19 @@ require("lazy").setup({
   { 'hrsh7th/nvim-cmp' },
   { 'saadparwaiz1/cmp_luasnip' },
   { 'hrsh7th/cmp-nvim-lsp' },
+  { 'hrsh7th/cmp-path' },
+  { 'hrsh7th/cmp-buffer' },
   {
     'nvimdev/dashboard-nvim',
     event = 'VimEnter',
     config = function()
       require('dashboard').setup {}
-    end,
-    dependencies = { {'nvim-tree/nvim-web-devicons'}}
+    end
   },
   {
     "willothy/nvim-cokeline",
     dependencies = {
       "nvim-lua/plenary.nvim",        -- Required for v0.4.0+
-      "nvim-tree/nvim-web-devicons", -- If you want devicons
       "stevearc/resession.nvim"       -- Optional, for persistent history
     },
     config = true
@@ -128,24 +130,10 @@ require("ibl.hooks").register(require("ibl.hooks").type.VIRTUAL_TEXT, function(_
     return virt_text
 end)
 
-require("nvim-tree").setup {
-    actions = {
-        open_file = {
-            quit_on_open = true,
-        },
-    },
-    on_attach = function(bufnr)
-        local function opts(desc)
-            return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
-        end
-        local ok, api = pcall(require, "nvim-tree.api")
-        assert(ok, "api module is not found")
-        vim.keymap.set("n", "<CR>", api.node.open.tab_drop, opts("Tab drop"))
-    end
-}
-
-local keymap = vim.api.nvim_set_keymap
-keymap("n", "<C-l>", ":NvimTreeToggle<CR>", {})
+require("oil").setup({})
+vim.keymap.set("n", "<C-l>", function()
+  require("oil").open()
+end)
 
 local harpoon = require("harpoon")
 harpoon:setup()
@@ -206,6 +194,8 @@ cmp.setup {
     },
     sources = {
         { name = 'nvim_lsp' },
-        { name = 'luasnip' }
+        { name = 'path' },
+        { name = 'buffer' },
+        { name = 'luasnip' },
     },
 }

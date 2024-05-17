@@ -6,9 +6,8 @@ require("mason-lspconfig").setup {
         "asm_lsp",
         --"pylsp",
         "rust_analyzer",
-        "typos_lsp",
-        --"bashls",
-        --"cmake",
+        "bashls",
+        "cmake",
         "kotlin_language_server",
         "vls",
         "zls",
@@ -36,14 +35,28 @@ lspconfig.tsserver.setup {}
 lspconfig.asm_lsp.setup {}
 --lspconfig.pylsp.setup {}
 lspconfig.rust_analyzer.setup {}
-lspconfig.typos_lsp.setup {}
---lspconfig.bashls.setup {}
---lspconfig.cmake.setup {}
+lspconfig.bashls.setup {}
+lspconfig.cmake.setup {}
 lspconfig.kotlin_language_server.setup {}
 lspconfig.vls.setup {}
 lspconfig.zls.setup {}
 lspconfig.gopls.setup {}
 lspconfig.gleam.setup {}
+
+vim.cmd([[autocmd BufRead,BufNewFile *.ua setfiletype uiua]])
+lspconfig.uiua.setup {}
+
+require('lspconfig.configs').roc = {
+  default_config = {
+    cmd = {"roc_language_server"},
+    filetypes = {'roc'},
+    root_dir = lspconfig.util.root_pattern("*.roc"),
+    single_file_support = true,
+    settings = {},
+  };
+}
+vim.cmd([[autocmd BufRead,BufNewFile *.roc setfiletype roc]])
+lspconfig.roc.setup {}
 
 -- Global mappings.
 -- See `:help vim.diagnostic.*` for documentation on any of the below functions
