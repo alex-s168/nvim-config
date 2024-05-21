@@ -62,6 +62,7 @@ require("lazy").setup({
     -- install jsregexp (optional!).
     build = "make install_jsregexp"
   },
+  { 'davvid/telescope-git-grep.nvim' },
   {
     'nvimakinsho/toggleterm.nvim',
     version = "*",
@@ -159,6 +160,8 @@ end
 
 vim.keymap.set("n", "<C-e>", function() toggle_telescope(harpoon:list()) end,
     { desc = "Open harpoon window" })
+
+require('telescope').load_extension('git_grep')
 
 vim.keymap.set("n", "<C-w>", ":Telescope find_files<CR>", {})
 
