@@ -2,16 +2,10 @@ require("mason-lspconfig").setup {
     ensure_installed = {
         "clangd",
         "lua_ls",
-        --"tsserver",
-        "asm_lsp",
-        --"pylsp",
         "rust_analyzer",
-        "bashls",
-        "cmake",
         "kotlin_language_server",
         "vls",
         "zls",
-        "gopls",
     },
 }
 
@@ -31,16 +25,10 @@ vim.cmd([[autocmd BufRead,BufNewFile *.sq setfiletype sq]])
 
 lspconfig.clangd.setup {}
 lspconfig.lua_ls.setup {}
-lspconfig.tsserver.setup {}
-lspconfig.asm_lsp.setup {}
---lspconfig.pylsp.setup {}
 lspconfig.rust_analyzer.setup {}
-lspconfig.bashls.setup {}
-lspconfig.cmake.setup {}
 lspconfig.kotlin_language_server.setup {}
 lspconfig.vls.setup {}
 lspconfig.zls.setup {}
-lspconfig.gopls.setup {}
 lspconfig.gleam.setup {}
 
 vim.cmd([[autocmd BufRead,BufNewFile *.ua setfiletype uiua]])

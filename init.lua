@@ -27,11 +27,6 @@ require("lazy").setup({
   { "nvim-tree/nvim-web-devicons" },
   { "stevearc/oil.nvim" },
   {
-    "ThePrimeagen/harpoon",
-    branch = "harpoon2",
-    dependencies = { "nvim-lua/plenary.nvim" }
-  },
-  {
     'nvim-telescope/telescope.nvim',
     tag = '0.1.6',
     dependencies = { 'nvim-lua/plenary.nvim' }
@@ -63,27 +58,7 @@ require("lazy").setup({
     build = "make install_jsregexp"
   },
   { 'davvid/telescope-git-grep.nvim' },
-  {
-    'nvimakinsho/toggleterm.nvim',
-    version = "*",
-    config = true
-  },
---  { 'nvim-treesitter/nvim-treesitter' },
 })
-
--- vim.cmd(":TSUpdate")
--- require('nvim-treesitter.configs').setup {
---   highlight = {
---     enable = true,
---     -- Setting this to true will run `:h syntax` and tree-sitter at the same time.
---     -- Set this to `true` if you depend on 'syntax' being enabled (like for indentation).
---     -- Using this option may slow down your editor, and you may see some duplicate highlights.
---     -- Instead of true it can also be a list of languages
---     additional_vim_regex_highlighting = false,
---   },
--- }
-
-require("toggleterm").setup{}
 
 require("mason").setup({
   ui = {
@@ -136,34 +111,12 @@ vim.keymap.set("n", "<C-l>", function()
   require("oil").open()
 end)
 
-local harpoon = require("harpoon")
-harpoon:setup()
-
-vim.keymap.set("n", "<leader>a", function() harpoon:list():add() end)
-
-local conf = require("telescope.config").values
-local function toggle_telescope(harpoon_files)
-    local file_paths = {}
-    for _, item in ipairs(harpoon_files.items) do
-        table.insert(file_paths, item.value)
-    end
-
-    require("telescope.pickers").new({}, {
-        prompt_title = "Harpoon",
-        finder = require("telescope.finders").new_table({
-            results = file_paths,
-        }),
-        previewer = conf.file_previewer({}),
-        sorter = conf.generic_sorter({}),
-    }):find()
-end
-
-vim.keymap.set("n", "<C-e>", function() toggle_telescope(harpoon:list()) end,
-    { desc = "Open harpoon window" })
-
 require('telescope').load_extension('git_grep')
 
 vim.keymap.set("n", "<C-w>", ":Telescope find_files<CR>", {})
+
+vim.keymap.set('n', '<C-CR>', function()
+    vim.lsp.buf.code_action({apply=true}) end, bufopts)
 
 local cmp = require 'cmp'
 cmp.setup {
