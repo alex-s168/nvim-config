@@ -58,7 +58,46 @@ require("lazy").setup({
     build = "make install_jsregexp"
   },
   { 'davvid/telescope-git-grep.nvim' },
+  {
+    "nvim-java/nvim-java",
+    dependencies = {
+      { "neovim/nvim-lspconfig" }
+    }
+  },
+  { "lervag/vimtex" },
+{
+  "scalameta/nvim-metals",
+  dependencies = {
+    "nvim-lua/plenary.nvim",
+  },
+  ft = { "scala", "sbt", "java" },
+  opts = function()
+    local metals_config = require("metals").bare_config()
+    metals_config.on_attach = function(client, bufnr)
+      -- your on_attach function
+    end
+
+    return metals_config
+  end,
+  config = function(self, metals_config)
+    local nvim_metals_group = vim.api.nvim_create_augroup("nvim-metals", { clear = true })
+    vim.api.nvim_create_autocmd("FileType", {
+      pattern = self.ft,
+      callback = function()
+        require("metals").initialize_or_attach(metals_config)
+      end,
+      group = nvim_metals_group,
+    })
+  end
+}
 })
+
+-- open tex:    ,lv
+-- compile doc: ,ll
+vim.g.vimtex_view_method = "zathura"
+vim.g.maplocalleader = ","
+
+require('java').setup()
 
 require("mason").setup({
   ui = {
@@ -114,9 +153,6 @@ end)
 require('telescope').load_extension('git_grep')
 
 vim.keymap.set("n", "<C-w>", ":Telescope find_files<CR>", {})
-
-vim.keymap.set('n', '<C-CR>', function()
-    vim.lsp.buf.code_action({apply=true}) end, bufopts)
 
 local cmp = require 'cmp'
 cmp.setup {
