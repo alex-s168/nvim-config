@@ -38,6 +38,20 @@ require("lazy").setup({
         build = "make install_jsregexp"
     },
     { "saecki/live-rename.nvim" },
+    {
+        "nvim-treesitter/nvim-treesitter",
+        build = ":TSUpdate",
+        config = function()
+            local configs = require("nvim-treesitter.configs")
+
+            configs.setup({
+                ensure_installed = { "c", "lua", "query", "markdown", "markdown_inline", "rust", "html" },
+                sync_install = false,
+                highlight = { enable = false },
+                indent = { enable = false },
+            })
+        end
+    },
 
     -- utils --
     { "stevearc/oil.nvim" },
