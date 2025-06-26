@@ -1,7 +1,6 @@
 local lspconfig = require("lspconfig")
 
 lspconfig.clangd.setup {}
-lspconfig.lua_ls.setup {}
 lspconfig.rust_analyzer.setup {}
 lspconfig.kotlin_language_server.setup {}
 lspconfig.vls.setup {}
@@ -10,6 +9,38 @@ lspconfig.gleam.setup {}
 lspconfig.jdtls.setup {}
 lspconfig.texlab.setup {}
 lspconfig.csharp_ls.setup {}
+
+lspconfig.lua_ls.setup {
+    on_init = function(client)
+        local path = client.workspace_folders[1].name
+        if vim.loop.fs_stat(path .. '/.luarc.json') or vim.loop.fs_stat(path .. '/.luarc.jsonc') then
+            return
+        end
+
+        client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
+            runtime = {
+                -- Tell the language server which version of Lua you're using
+                -- (most likely LuaJIT in the case of Neovim)
+                version = 'LuaJIT'
+            },
+            -- Make the server aware of Neovim runtime files
+            workspace = {
+                checkThirdParty = false,
+                library = {
+                    vim.env.VIMRUNTIME
+                    -- Depending on the usage, you might want to add additional paths here.
+                    -- "${3rd}/luv/library"
+                    -- "${3rd}/busted/library",
+                }
+                -- or pull in all of 'runtimepath'. NOTE: this is a lot slower
+                -- library = vim.api.nvim_get_runtime_file("", true)
+            }
+        })
+    end,
+    settings = {
+        Lua = {}
+    }
+}
 
 require('lspconfig.configs').roc = {
     default_config = {
@@ -28,18 +59,23 @@ vim.keymap.set('n', '[', vim.diagnostic.goto_prev)
 vim.keymap.set('n', ']', vim.diagnostic.goto_next)
 
 -- list: []{title, search, action}
-local function code_actions_menu(items)
+local function code_actions_menu(items, second_title)
     local pickers = require("telescope.pickers")
     local actions = require("telescope.actions")
     local action_state = require("telescope.actions.state")
     local finders = require("telescope.finders")
     local conf = require('telescope.config').values
 
+    local title = "Code Actions"
+    if second_title then
+        title = title .. ": " .. second_title
+    end
+
     local opts = {
         sorting_strategy = "ascending"
     }
     pickers.new(opts, {
-        prompt_title = "Code Actions",
+        prompt_title = title,
         finder = finders.new_table {
             results = items,
             entry_maker = function(entry)
@@ -62,17 +98,24 @@ local function code_actions_menu(items)
     }):find()
 end
 
-local function lspActionsAsync(withactions, finally)
+local function lspActionsAsync(bufnr, withactions, finally)
     local params = vim.lsp.util.make_range_params()
     params.context = { diagnostics = vim.lsp.diagnostic.get_line_diagnostics() }
 
-    vim.lsp.buf_request(0, 'textDocument/codeAction', params, function(err, actions, ctx, _)
-        if err then
-            print("Error getting code actions: ", err)
-        else
-            if actions then
-                withactions(actions)
-            end
+    vim.lsp.buf_request_all(bufnr, 'textDocument/codeAction', params, function(err, actions, _, _)
+        if actions then
+            withactions(actions)
+        end
+        finally()
+    end)
+end
+
+local function lspWorkspaceSymbolsAsync(bufnr, withsymbols, finally)
+    local params = { query = "" }
+
+    vim.lsp.buf_request_all(bufnr, "workspace/symbol", params, function(err, list, _, _)
+        if list then
+            withsymbols(list)
         end
         finally()
     end)
@@ -173,7 +216,6 @@ local function code_actions()
                         if range.end_col == 0 then
                             range.end_line = range.end_line - 1
                         end
-                        -- TODO: should also extend column
                         if range.start_line >= orig_selec.start_line and range.start_line <= orig_selec.end_line then
                             selection.end_line = math.max(selection.end_line, range.end_line)
                         end
@@ -269,12 +311,22 @@ local function code_actions()
     })
 
     local lsp_actions = {}
-    lspActionsAsync(function(lsp_actions_in)
+    lspActionsAsync(bufnr, function(lsp_actions_in)
         for _, action in ipairs(lsp_actions_in) do
             lsp_actions[action.title] = action
         end
     end, function()
+        local lsp_disable_diagnostics = {}
+        local have_lsp_disable_diagnostics = false
+
         for _, action in pairs(lsp_actions) do
+            if string.match(action.title, "^Disable diagnostics ") then
+                local d = action.title:gsub("^Disable diagnostics ", "")
+                lsp_disable_diagnostics[d] = action
+                have_lsp_disable_diagnostics = true
+                goto continue
+            end
+
             local title = "LSP: " .. action.title
             table.insert(actions, {
                 id = allocid(),
@@ -289,12 +341,91 @@ local function code_actions()
                     })
                 end
             })
+
+            ::continue::
         end
+
+        if have_lsp_disable_diagnostics then
+            table.insert(actions, {
+                id = allocid(),
+                search = "LSP: Disable diagnostics",
+                title = "LSP: Disable diagnostics (*)",
+                action = function()
+                    local dis_actions = {}
+                    for key, value in pairs(lsp_disable_diagnostics) do
+                        table.insert(dis_actions, {
+                            id = allocid(),
+                            search = key,
+                            title = key,
+                            action = function()
+                                vim.lsp.buf.code_action({
+                                    apply = true,
+                                    filter = function(ac)
+                                        return ac.title == value.title
+                                    end
+                                })
+                            end
+                        })
+                    end
+                    code_actions_menu(dis_actions, "Disable Diagnostics")
+                end
+            })
+        end
+
         code_actions_menu(actions)
     end)
 end
 vim.keymap.set("n", '<space>ca', code_actions, {})
 vim.keymap.set("v", '<space>ca', code_actions, {})
+
+local function lspAnyClientSupports(bufnr, method)
+    for _, client in ipairs(vim.lsp.get_clients { bufnr = bufnr }) do
+        if client:supports_method(method, bufnr) then
+            return true
+        end
+    end
+    return false
+end
+
+local function global_actions()
+    local _nextid = 1
+    local function allocid()
+        local v = _nextid
+        _nextid = _nextid + 1
+        return v
+    end
+
+    local bufnr = vim.api.nvim_get_current_buf()
+    local filetype = vim.bo[bufnr].filetype
+
+    local actions = {}
+
+    if lspAnyClientSupports(bufnr, "workspace/symbol") then
+        table.insert(actions, {
+            id = allocid(),
+            search = "LSP: Workspace Symbols",
+            title = "LSP: Workspace Symbols",
+            action = function()
+                local sym_actions = {}
+                lspWorkspaceSymbolsAsync(bufnr, function(symbols)
+                    for _, sym in ipairs(symbols) do
+                        table.insert(sym_actions, {
+                            id = allocid(),
+                            search = sym.name,
+                            title = sym.name,
+                            action = function() end
+                        })
+                    end
+                end, function()
+                    code_actions_menu(sym_actions, "Workspace Symbols")
+                end)
+            end
+        })
+    end
+
+    code_actions_menu(actions)
+end
+vim.keymap.set("n", '<space>ga', global_actions, {})
 
 vim.api.nvim_create_user_command("LspSections", function()
     require("select_parent_range").start()
