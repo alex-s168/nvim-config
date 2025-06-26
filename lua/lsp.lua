@@ -1,60 +1,5 @@
 local lspconfig = require("lspconfig")
 
-lspconfig.clangd.setup {}
-lspconfig.rust_analyzer.setup {}
-lspconfig.kotlin_language_server.setup {}
-lspconfig.vls.setup {}
-lspconfig.zls.setup {}
-lspconfig.gleam.setup {}
-lspconfig.jdtls.setup {}
-lspconfig.texlab.setup {}
-lspconfig.csharp_ls.setup {}
-lspconfig.typos_lsp.setup {}
-
-lspconfig.lua_ls.setup {
-    on_init = function(client)
-        local path = client.workspace_folders[1].name
-        if vim.loop.fs_stat(path .. '/.luarc.json') or vim.loop.fs_stat(path .. '/.luarc.jsonc') then
-            return
-        end
-
-        client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
-            runtime = {
-                -- Tell the language server which version of Lua you're using
-                -- (most likely LuaJIT in the case of Neovim)
-                version = 'LuaJIT'
-            },
-            -- Make the server aware of Neovim runtime files
-            workspace = {
-                checkThirdParty = false,
-                library = {
-                    vim.env.VIMRUNTIME
-                    -- Depending on the usage, you might want to add additional paths here.
-                    -- "${3rd}/luv/library"
-                    -- "${3rd}/busted/library",
-                }
-                -- or pull in all of 'runtimepath'. NOTE: this is a lot slower
-                -- library = vim.api.nvim_get_runtime_file("", true)
-            }
-        })
-    end,
-    settings = {
-        Lua = {}
-    }
-}
-
-require('lspconfig.configs').roc = {
-    default_config = {
-        cmd = { "roc_language_server" },
-        filetypes = { 'roc' },
-        root_dir = lspconfig.util.root_pattern("*.roc"),
-        single_file_support = true,
-        settings = {},
-    },
-}
-vim.cmd([[autocmd BufRead,BufNewFile *.roc setfiletype roc]])
-lspconfig.roc.setup {}
-
 vim.keymap.set('n', '<space>e', vim.diagnostic.open_float)
 vim.keymap.set('n', '[', vim.diagnostic.goto_prev)
 vim.keymap.set('n', ']', vim.diagnostic.goto_next)
@@ -481,7 +426,7 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 })
 
 vim.cmd([[autocmd BufRead,BufNewFile *.ua setfiletype uiua]])
-lspconfig.uiua.setup {}
+
 vim.cmd([[hi link @lsp.type.uiua_number @number]])
 vim.cmd([[hi link @lsp.type.uiua_string @string]])
 vim.cmd([[hi link @lsp.type.uiua_module @Type]])

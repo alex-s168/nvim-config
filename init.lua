@@ -25,13 +25,59 @@ require("lazy").setup({
     },
 
     -- important --
-    { "neovim/nvim-lspconfig" },
+    {
+        "neovim/nvim-lspconfig",
+        opts = {
+            servers = {
+                clangd = {},
+                rust_analyzer = {},
+                kotlin_language_server = {},
+                vls = {},
+                zls = {},
+                gleam = {},
+                jdtls = {},
+                texlab = {},
+                csharp_ls = {},
+                typos_lsp = {},
+                uiua = {},
+                lua_ls = {
+                    on_init = function(client)
+                        local path = client.workspace_folders[1].name
+                        if vim.loop.fs_stat(path .. '/.luarc.json') or vim.loop.fs_stat(path .. '/.luarc.jsonc') then
+                            return
+                        end
+
+                        client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
+                            runtime = { version = "LuaJIT" },
+                            -- Make the server aware of Neovim runtime files
+                            workspace = {
+                                checkThirdParty = false,
+                                library = {
+                                    vim.env.VIMRUNTIME
+                                }
+                                -- library = vim.api.nvim_get_runtime_file("", true)
+                            }
+                        })
+                    end,
+                    settings = {
+                        Lua = {}
+                    }
+                },
+            }
+        },
+        config = function(_, opts)
+            local lspconfig = require("lspconfig")
+            local blink = require("blink.cmp")
+
+            for server, config in pairs(opts.servers) do
+                config.capabilities = blink.get_lsp_capabilities(config.capabilities)
+                lspconfig[server].setup(config)
+            end
+        end
+    },
     {
         'saghen/blink.cmp',
-        -- optional: provides snippets for the snippet source
         dependencies = { 'rafamadriz/friendly-snippets' },
-
-        -- version = '1.*',
         build = 'cargo build --release',
 
         opts = {
