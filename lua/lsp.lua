@@ -9,6 +9,7 @@ lspconfig.gleam.setup {}
 lspconfig.jdtls.setup {}
 lspconfig.texlab.setup {}
 lspconfig.csharp_ls.setup {}
+lspconfig.typos_lsp.setup {}
 
 lspconfig.lua_ls.setup {
     on_init = function(client)
@@ -58,6 +59,15 @@ vim.keymap.set('n', '<space>e', vim.diagnostic.open_float)
 vim.keymap.set('n', '[', vim.diagnostic.goto_prev)
 vim.keymap.set('n', ']', vim.diagnostic.goto_next)
 
+local function lspAnyClientSupports(bufnr, method)
+    for _, client in ipairs(vim.lsp.get_clients { bufnr = bufnr }) do
+        if client:supports_method(method, bufnr) then
+            return true
+        end
+    end
+    return false
+end
+
 -- list: []{title, search, action}
 local function code_actions_menu(items, second_title)
     local pickers = require("telescope.pickers")
@@ -99,10 +109,10 @@ local function code_actions_menu(items, second_title)
 end
 
 local function lspActionsAsync(bufnr, withactions, finally)
-    local params = vim.lsp.util.make_range_params()
+    local params = { unpack(vim.lsp.util.make_range_params(nil, "utf-8")) }
     params.context = { diagnostics = vim.lsp.diagnostic.get_line_diagnostics() }
 
-    vim.lsp.buf_request_all(bufnr, 'textDocument/codeAction', params, function(err, actions, _, _)
+    vim.lsp.buf_request_all(bufnr, 'textDocument/codeAction', params, function(_, actions, _)
         if actions then
             withactions(actions)
         end
@@ -176,6 +186,10 @@ local function code_actions()
 
     local function extend_selection_to_lsp_ranges(lines)
         if not selection.valid then
+            return false
+        end
+
+        if not lspAnyClientSupports(bufnr, "textDocument/selectionRange") then
             return false
         end
 
@@ -377,15 +391,6 @@ local function code_actions()
 end
 vim.keymap.set("n", '<space>ca', code_actions, {})
 vim.keymap.set("v", '<space>ca', code_actions, {})
-
-local function lspAnyClientSupports(bufnr, method)
-    for _, client in ipairs(vim.lsp.get_clients { bufnr = bufnr }) do
-        if client:supports_method(method, bufnr) then
-            return true
-        end
-    end
-    return false
-end
 
 local function global_actions()
     local _nextid = 1

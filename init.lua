@@ -26,16 +26,30 @@ require("lazy").setup({
 
     -- important --
     { "neovim/nvim-lspconfig" },
-    { 'hrsh7th/nvim-cmp' },
-    { 'saadparwaiz1/cmp_luasnip' },
-    { 'hrsh7th/cmp-nvim-lsp' },
-    { 'hrsh7th/cmp-path' },
-    { 'hrsh7th/cmp-buffer' },
     {
-        "L3MON4D3/LuaSnip",
-        version = "v2.3.0",
-        -- install jsregexp (optional!).
-        build = "make install_jsregexp"
+        'saghen/blink.cmp',
+        -- optional: provides snippets for the snippet source
+        dependencies = { 'rafamadriz/friendly-snippets' },
+
+        -- version = '1.*',
+        build = 'cargo build --release',
+
+        opts = {
+            keymap = { preset = "enter" },
+
+            appearance = {
+                nerd_font_variant = "mono"
+            },
+
+            completion = { documentation = { auto_show = true } },
+
+            sources = {
+                default = { 'lsp', 'path', 'snippets', 'buffer' },
+            },
+
+            fuzzy = { implementation = "prefer_rust_with_warning" }
+        },
+        opts_extend = { "sources.default" }
     },
     { "saecki/live-rename.nvim" },
     {
@@ -54,7 +68,10 @@ require("lazy").setup({
     },
 
     -- utils --
-    { "stevearc/oil.nvim" },
+    {
+        "stevearc/oil.nvim",
+        opts = {}
+    },
     {
         'nvim-telescope/telescope.nvim',
         tag = '0.1.8',
@@ -120,7 +137,7 @@ require("ibl").setup({
     scope = {
         show_start = false,
         show_end = false
-    }
+    },
 })
 
 -- stolen from https://github.com/lukas-reineke/indent-blankline.nvim/discussions/664
@@ -137,7 +154,6 @@ require("ibl.hooks").register(require("ibl.hooks").type.VIRTUAL_TEXT, function(_
     return virt_text
 end)
 
-require("oil").setup({})
 vim.keymap.set("n", "<C-l>", function()
     require("oil").open()
 end)
@@ -153,39 +169,3 @@ require("telescope").setup({
         },
     },
 })
-
-local cmp = require 'cmp'
-cmp.setup {
-    mapping = cmp.mapping.preset.insert({
-        ['<C-Space>'] = cmp.mapping.complete(),
-        ['<CR>'] = cmp.mapping.confirm {
-            behavior = cmp.ConfirmBehavior.Replace,
-            select = true,
-        },
-        ['<Tab>'] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-                cmp.select_next_item()
-            else
-                fallback()
-            end
-        end, { 'i', 's' }),
-        ['<S-Tab>'] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-                cmp.select_prev_item()
-            else
-                fallback()
-            end
-        end, { 'i', 's' }),
-    }),
-    snippet = {
-        expand = function(args)
-            require('luasnip').lsp_expand(args.body)
-        end
-    },
-    sources = {
-        { name = 'nvim_lsp' },
-        { name = 'path' },
-        { name = 'buffer' },
-        { name = 'luasnip' },
-    },
-}
