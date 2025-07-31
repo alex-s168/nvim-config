@@ -153,6 +153,9 @@ require("lazy").setup({
                 lsp_ai = {
                     root_dir = vim.fn.getcwd(),
                     init_options = lsp_ai_init_options
+                },
+                mlir_lsp_server = {
+                    cmd = "~/llvm-project/build/bin/mlir-lsp-server"
                 }
             }
         },
