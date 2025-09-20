@@ -58,7 +58,11 @@ require("lazy").setup({
 
 
   -- utils --
-  { "stevearc/oil.nvim" },
+  {
+    "stevearc/oil.nvim",
+    dependencies = { { "echasnovski/mini.icons", opts = {} } },
+    lazy = false,
+  },
   {
     'nvim-telescope/telescope.nvim',
     tag = '0.1.8',
@@ -108,8 +112,13 @@ require("ibl.hooks").register(require("ibl.hooks").type.VIRTUAL_TEXT, function(_
   return virt_text
 end)
 
+local oilSetup = false
 vim.keymap.set("n", "<C-l>", function()
-  require("oil").open()
+  if not oilSetup then
+    require("oil").setup()
+    oilSetup = true
+  end
+  vim.cmd([[:Oil]])
 end)
 
 require("telescope").load_extension('git_grep')
