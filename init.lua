@@ -62,6 +62,9 @@ require("lazy").setup({
     "stevearc/oil.nvim",
     dependencies = { { "echasnovski/mini.icons", opts = {} } },
     lazy = false,
+    opts = {
+      default_file_explorer = true,
+    }
   },
   {
     'nvim-telescope/telescope.nvim',
@@ -113,11 +116,15 @@ require("ibl.hooks").register(require("ibl.hooks").type.VIRTUAL_TEXT, function(_
 end)
 
 local oilSetup = false
-vim.keymap.set("n", "<C-l>", function()
+local function setupOil()
   if not oilSetup then
     require("oil").setup()
     oilSetup = true
   end
+end
+
+vim.keymap.set("n", "<C-l>", function()
+  setupOil()
   vim.cmd([[:Oil]])
 end)
 
@@ -233,7 +240,7 @@ local languages = {
   },
 
   ["uiua"] = {
-    files = { ".ua" },
+    files = { "*.ua" },
     comment_prefix = "#",
 
     lsp = {
@@ -257,7 +264,7 @@ local languages = {
   },
 
   ["mlir"] = {
-    files = { ".mlir" },
+    files = { "*.mlir" },
     comment_prefix = "#",
 
     lsp = {
@@ -265,7 +272,19 @@ local languages = {
         cmd = "~/llvm-project/build/bin/mlir-lsp-server"
       }
     }
-  }
+  },
+
+  ["crepuscular"] = {
+    files = { "*.crr" },
+    comment_prefix = "#",
+    tree_sitter = {}
+  },
+
+  ["asciidoc"] = {
+    files = { "*.adoc", "*.txt" },
+    comment_prefix = "//",
+    tree_sitter = {}
+  },
 }
 
 
