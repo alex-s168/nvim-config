@@ -26,6 +26,12 @@ require("lazy").setup({
   -- important --
   { "neovim/nvim-lspconfig" },
   {
+    "nvim-treesitter/nvim-treesitter",
+    branch = 'master',
+    lazy = false,
+    build = ":TSUpdate"
+  },
+  {
     "saghen/blink.cmp",
     build = "cargo build --release",
 
@@ -84,6 +90,21 @@ require("lazy").setup({
 vim.cmd([[colorscheme carbonfox]])
 
 require("lsp")
+
+require("nvim-treesitter.configs").setup {
+  -- A list of parser names, or "all" (the listed parsers MUST always be installed)
+  ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline" },
+
+  sync_install = false,
+
+  auto_install = true,
+
+  highlight = {
+    enable = true,
+    disable = { "rust" },
+    additional_vim_regex_highlighting = false,
+  },
+}
 
 vim.o.expandtab = true
 vim.o.smartindent = true
@@ -216,7 +237,6 @@ local languages = {
     lsp = {
       rust_analyzer = {}
     },
-    -- TODO: treesitter
   },
 
   ["kotlin"] = {
@@ -226,7 +246,6 @@ local languages = {
     lsp = {
       kotlin_language_server = {},
     },
-    -- TODO: treesitter
   },
 
   ["csharp"] = {
@@ -236,7 +255,6 @@ local languages = {
     lsp = {
       csharp_ls = {},
     },
-    -- TODO: treesitter
   },
 
   ["uiua"] = {
