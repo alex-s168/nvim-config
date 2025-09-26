@@ -20,25 +20,73 @@ require("lazy").setup({
   {
     "lukas-reineke/indent-blankline.nvim",
     main = "ibl",
-    version = "v3.9.0"
+    version = "v3.9.0",
+    lazy = false,
+    config = function()
+      require("ibl").setup({
+        indent = {
+          char = "|"
+        },
+        whitespace = { highlight = { "Whitespace", "NonText" } },
+        scope = {
+          show_start = false,
+          show_end = false
+        },
+      })
+
+      -- stolen from https://github.com/lukas-reineke/indent-blankline.nvim/discussions/664
+      require("ibl.hooks").register(require("ibl.hooks").type.VIRTUAL_TEXT, function(_, bufnr, row, virt_text)
+        local config = require("ibl.config").get_config(bufnr)
+        local line = vim.api.nvim_buf_get_lines(bufnr, row, row + 1, false)[1]
+        if line == "" then
+          for _, v in ipairs(virt_text) do
+            if v[1] == config.indent.char then
+              v[1] = "┊"
+            end
+          end
+        end
+        return virt_text
+      end)
+		end
   },
 
   -- important --
-  { "neovim/nvim-lspconfig" },
+  {
+    "neovim/nvim-lspconfig",
+    lazy = false
+  },
   {
     "nvim-treesitter/nvim-treesitter",
     branch = 'master',
     lazy = false,
-    build = ":TSUpdate"
+    build = ":TSUpdate",
+    config = {
+      -- A list of parser names, or "all" (the listed parsers MUST always be installed)
+      ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline" },
+
+      indent = {
+        enable = true,
+      },
+
+      sync_install = false,
+
+      auto_install = true,
+
+      highlight = {
+        enable = true,
+        disable = { "rust" },
+        additional_vim_regex_highlighting = false,
+      },
+    }
   },
   {
     "saghen/blink.cmp",
-    build = "cargo build --release",
+    -- don't push del in this line!
 
     opts = {
       keymap = {
         ['<C-space>'] = { 'show', 'show_documentation', 'hide_documentation' },
-        ['<Tab>'] = { 'accept' },
+        ['<Tab>'] = { 'accept', 'fallback' },
         ['<C-k>'] = { 'show_signature', 'hide_signature' },
       },
 
@@ -56,7 +104,8 @@ require("lazy").setup({
         enabled = false,
       },
 
-      fuzzy = { implementation = "prefer_rust_with_warning" },
+      -- don't push!
+      fuzzy = { implementation = "lua" },
     },
     opts_extend = { "sources.default" }
   },
@@ -75,7 +124,20 @@ require("lazy").setup({
   {
     'nvim-telescope/telescope.nvim',
     tag = '0.1.8',
-    dependencies = { 'nvim-lua/plenary.nvim' }
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    config = function()
+      require("telescope").load_extension('git_grep')
+      -- one esc => exit instead of double esc
+      require("telescope").setup({
+        defaults = {
+          mappings = {
+            i = {
+              ["<esc>"] = require("telescope.actions").close,
+            },
+          },
+        },
+      })
+    end
   },
   { 'davvid/telescope-git-grep.nvim' },
   {
@@ -87,79 +149,18 @@ require("lazy").setup({
   },
 })
 
-vim.cmd([[colorscheme carbonfox]])
-
 require("lsp")
 
-require("nvim-treesitter.configs").setup {
-  -- A list of parser names, or "all" (the listed parsers MUST always be installed)
-  ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline" },
-
-  sync_install = false,
-
-  auto_install = true,
-
-  highlight = {
-    enable = true,
-    disable = { "rust" },
-    additional_vim_regex_highlighting = false,
-  },
-}
+vim.cmd([[colorscheme carbonfox]])
 
 vim.o.expandtab = true
-vim.o.smartindent = true
+vim.o.smartindent = false
 vim.o.tabstop = 2
 vim.o.shiftwidth = 2
 
-require("ibl").setup({
-  indent = {
-    char = "|"
-  },
-  whitespace = { highlight = { "Whitespace", "NonText" } },
-  scope = {
-    show_start = false,
-    show_end = false
-  },
-})
-
--- stolen from https://github.com/lukas-reineke/indent-blankline.nvim/discussions/664
-require("ibl.hooks").register(require("ibl.hooks").type.VIRTUAL_TEXT, function(_, bufnr, row, virt_text)
-  local config = require("ibl.config").get_config(bufnr)
-  local line = vim.api.nvim_buf_get_lines(bufnr, row, row + 1, false)[1]
-  if line == "" then
-    for _, v in ipairs(virt_text) do
-      if v[1] == config.indent.char then
-        v[1] = "┊"
-      end
-    end
-  end
-  return virt_text
-end)
-
-local oilSetup = false
-local function setupOil()
-  if not oilSetup then
-    require("oil").setup()
-    oilSetup = true
-  end
-end
-
 vim.keymap.set("n", "<C-l>", function()
-  setupOil()
   vim.cmd([[:Oil]])
 end)
-
-require("telescope").load_extension('git_grep')
--- one esc => exit instead of double esc
-require("telescope").setup({
-  defaults = {
-    mappings = {
-      i = {
-        ["<esc>"] = require("telescope.actions").close,
-      },
-    },
-  },
-})
 
 vim.lsp.config("typos_lsp", {
   init_options = {
@@ -168,28 +169,20 @@ vim.lsp.config("typos_lsp", {
 })
 vim.lsp.enable("typos_lsp")
 
-vim.lsp.config("lsp_ai", {
-  root_dir = vim.fn.getcwd(),
-  init_options = require("lsp/lsp_ai")
-})
-vim.lsp.enable("lsp_ai")
-
 -- TODO: comment = "// \1"
 
 local languages = {
   ["java"] = {
-    files = { "*.java" },
+    files = { ".*[.]java" },
     comment_prefix = "//",
-    tree_sitter = {},
   },
 
   ["c"] = {
-    files = { "*.c" },
+    files = { ".*[.]c" },
     pats = {
       [".clang-format"] = "yaml",
     },
     comment_prefix = "//",
-    tree_sitter = {},
 
     lsp = {
       clangd = {}
@@ -197,15 +190,13 @@ local languages = {
   },
 
   ["markdown"] = {
-    files = { "*.md" },
+    files = { ".*[.]md" },
     comment_prefix = "#",
-    tree_sitter = {},
   },
 
   ["lua"] = {
-    files = { "*.lua" },
+    files = { ".*[.]lua" },
     comment_prefix = "--",
-    tree_sitter = {},
 
     lsp = {
       lua_ls = {
@@ -231,7 +222,7 @@ local languages = {
   },
 
   ["rust"] = {
-    files = { "*.rs" },
+    files = { ".*[.]rs" },
     comment_prefix = "//",
 
     lsp = {
@@ -240,7 +231,7 @@ local languages = {
   },
 
   ["kotlin"] = {
-    files = { "*.kt", "*.kts" },
+    files = { ".*[.]kt", ".*[.]kts" },
     comment_prefix = "//",
 
     lsp = {
@@ -249,7 +240,7 @@ local languages = {
   },
 
   ["csharp"] = {
-    files = { "*.cs" },
+    files = { ".*[.]cs" },
     comment_prefix = "//",
 
     lsp = {
@@ -258,7 +249,7 @@ local languages = {
   },
 
   ["uiua"] = {
-    files = { "*.ua" },
+    files = { ".*[.]ua" },
     comment_prefix = "#",
 
     lsp = {
@@ -282,7 +273,7 @@ local languages = {
   },
 
   ["mlir"] = {
-    files = { "*.mlir" },
+    files = { ".*[.]mlir" },
     comment_prefix = "#",
 
     lsp = {
@@ -293,13 +284,12 @@ local languages = {
   },
 
   ["crepuscular"] = {
-    files = { "*.crr" },
+    files = { ".*[.]crr" },
     comment_prefix = "#",
-    tree_sitter = {}
   },
 
   ["asciidoc"] = {
-    files = { "*.adoc", "*.txt" },
+    files = { ".*[.]adoc", ".*[.]txt" },
     comment_prefix = "//",
     tree_sitter = {}
   },
@@ -385,3 +375,6 @@ for lang, spec in pairs(languages) do
     spec.init()
   end
 end
+
+
+require("ts_diagnostic")

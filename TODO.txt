@@ -1,0 +1,11 @@
+- TS folding
+- preview autocomplete
+- auto brackets
+- blink.cmp TS error missing
+- non-grid graphical?
+- manage plugin manager with itself?
+- nvim pack?
+
+lua lang:
+- TS based lua formatter
+- lazy.nvim plugin gui editor, using ts-oriented edit & format
