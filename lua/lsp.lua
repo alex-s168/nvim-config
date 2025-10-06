@@ -85,22 +85,6 @@ local function escape_pattern(s)
   return s:gsub("([^%w])", "%%%1")
 end
 
-local comment_prefixes = {
-  lua = "--",
-  python = "#",
-  sh = "#",
-  bash = "#",
-  uiua = "#",
-  javascript = "//",
-  typescript = "//",
-  c = "//",
-  cpp = "//",
-  java = "//",
-  rust = "//",
-  lisp = ";",
-  clisp = ";",
-}
-
 local function lsp_range_to_vim(range)
   return {
     start_line = range.start.line,
@@ -120,7 +104,7 @@ local function code_actions()
 
   local bufnr = vim.api.nvim_get_current_buf()
   local filetype = vim.bo[bufnr].filetype
-  local comment_prefix = comment_prefixes[filetype]
+  local comment_prefix = languages[filetype].comment_prefix
 
   local selection = {
     first = vim.fn.getpos("v"),

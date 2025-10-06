@@ -61,16 +61,15 @@ require("lazy").setup({
     lazy = false,
     build = ":TSUpdate",
     config = {
-      -- A list of parser names, or "all" (the listed parsers MUST always be installed)
-      ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline" },
+      ensure_installed = { "c", "lua", "vimdoc", "query", "markdown", "markdown_inline" },
+      auto_install = true,
+--      ignore_install = { "org" },
 
       indent = {
         enable = true,
       },
 
       sync_install = false,
-
-      auto_install = true,
 
       highlight = {
         enable = true,
@@ -110,7 +109,6 @@ require("lazy").setup({
     opts_extend = { "sources.default" }
   },
   { "saecki/live-rename.nvim" },
-
 
   -- utils --
   {
@@ -171,7 +169,22 @@ vim.lsp.enable("typos_lsp")
 
 -- TODO: comment = "// \1"
 
-local languages = {
+local function is_inside_nvim_config(path)
+  local uv = vim.loop
+  local nvim_config = vim.fn.stdpath("config")  -- usually ~/.config/nvim
+
+  -- Normalize both paths (resolve symlinks, remove '..', etc.)
+  local real_path = uv.fs_realpath(path)
+  local real_config = uv.fs_realpath(nvim_config)
+
+  if not real_path or not real_config then
+    return false
+  end
+
+  return real_path:sub(1, #real_config) == real_config
+end
+
+languages = {
   ["java"] = {
     files = { ".*[.]java" },
     comment_prefix = "//",
@@ -194,6 +207,21 @@ local languages = {
     comment_prefix = "#",
   },
 
+  ["yaml"] = {
+    files = { ".*[.]yaml", ".*[.]yml" },
+    comment_prefix = "#",
+  },
+
+  ["zig"] = {
+    files = { ".*[.]zig", ".*[.]zig[.]zon" },
+    comment_prefix = "//",
+    lsp = {
+      zls = {},
+    },
+
+    tree_sitter = {}
+  },
+
   ["lua"] = {
     files = { ".*[.]lua" },
     comment_prefix = "--",
@@ -206,13 +234,15 @@ local languages = {
             return
           end
 
-          client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
-            runtime = { version = "LuaJIT" },
-            workspace = {
-              checkThirdParty = false,
-              library = vim.api.nvim_get_runtime_file("", true)
-            }
-          })
+          if is_inside_nvim_config(path) then
+            client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
+              runtime = { version = "LuaJIT" },
+              workspace = {
+                checkThirdParty = false,
+                library = vim.api.nvim_get_runtime_file("", true)
+              }
+            })
+          end
         end,
         settings = {
           Lua = {}
@@ -293,6 +323,12 @@ local languages = {
     comment_prefix = "//",
     tree_sitter = {}
   },
+
+  ["python"] = {
+    files = { ".*[.]py" },
+    comment_prefix = "#",
+    tree_sitter = {}
+  },
 }
 
 
@@ -355,8 +391,8 @@ for lang, spec in pairs(languages) do
 
 
   ---- on open ----
-  vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-    pattern = spec.files,
+  vim.api.nvim_create_autocmd("FileType", {
+    pattern = lang,
     callback = function(ev)
       if spec.on_buf then
         spec.on_buf({ buf = ev.buf, file = ev.file })
@@ -365,6 +401,7 @@ for lang, spec in pairs(languages) do
       ---- treesitter ----
       if spec.tree_sitter then
         vim.treesitter.start(ev.buf, lang)
+        vim.cmd([[TSEnable highlight indent incremental_selection]])
       end
     end
   })
@@ -375,6 +412,5 @@ for lang, spec in pairs(languages) do
     spec.init()
   end
 end
-
 
 require("ts_diagnostic")
