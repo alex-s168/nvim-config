@@ -329,6 +329,31 @@ languages = {
     comment_prefix = "#",
     tree_sitter = {}
   },
+
+  ["ocamlinterface"] = {
+    files = { ".*[.]mli" },
+    tree_sitter = { name = "ocaml_interface" },
+    lsp = {
+      ocamllsp = {}
+    },
+  },
+
+  ["ocaml"] = {
+    files = { ".*[.]ml" },
+    tree_sitter = {},
+    lsp = {
+      ocamllsp = {}
+    },
+  },
+
+  ["haskell"] = {
+    files = { ".*[.]hs" },
+    comment_prefix = "#",
+    tree_sitter = {},
+    lsp = {
+      haskell_language_server = {}
+    }
+  },
 }
 
 
@@ -400,7 +425,7 @@ for lang, spec in pairs(languages) do
 
       ---- treesitter ----
       if spec.tree_sitter then
-        vim.treesitter.start(ev.buf, lang)
+        vim.treesitter.start(ev.buf, spec.tree_sitter.name or lang)
         vim.cmd([[TSEnable highlight indent incremental_selection]])
       end
     end
