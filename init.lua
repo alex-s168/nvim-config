@@ -354,6 +354,12 @@ languages = {
       haskell_language_server = {}
     }
   },
+
+  ["meson"] = {
+    files = { ".*[.]meson" },
+    comment_prefix = "#",
+    tree_sitter = {},
+  },
 }
 
 
