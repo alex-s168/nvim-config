@@ -52,7 +52,11 @@ local function code_actions_menu(items, second_title)
 end
 
 local function asyncLspRequest(bufnr, action, params, withresult, finally)
-  vim.lsp.buf_request_all(bufnr, action, params, function(results)
+  if #vim.lsp.get_clients() ==  0 then
+    finally()
+    return function() end
+  end
+  return vim.lsp.buf_request_all(bufnr, action, params, function(results)
     for client, result in ipairs(results) do
       local err = result.err
       local actions = result.result
@@ -73,7 +77,7 @@ local function lspActionsAsync(bufnr, withactions, finally)
   local params = vim.lsp.util.make_range_params(nil, "utf-8")
   params.context = { diagnostics = vim.lsp.diagnostic.get_line_diagnostics() }
 
-  asyncLspRequest(bufnr, "textDocument/codeAction", params, withactions, finally)
+  return asyncLspRequest(bufnr, "textDocument/codeAction", params, withactions, finally)
 end
 
 local function lspWorkspaceSymbolsAsync(bufnr, withsymbols, finally)
@@ -291,9 +295,17 @@ local function code_actions()
     })
   end
 
+  local is_done = false
+  local function done()
+    if not is_done then
+      is_done = true
+      code_actions_menu(actions)
+    end
+  end
+
   local lsp_actions = {}
   local num_preferred_actions = 0
-  lspActionsAsync(bufnr, function(lsp_actions_in, clientId)
+  local cancel = lspActionsAsync(bufnr, function(lsp_actions_in, clientId)
     for _, action in ipairs(lsp_actions_in) do
       action.clientId = clientId
       lsp_actions[action.title] = action
@@ -381,9 +393,12 @@ local function code_actions()
         end
       })
     end
-
-    code_actions_menu(actions)
+    done()
   end)
+  vim.defer_fn(function()
+    cancel()
+    done()
+  end, 1200)
 end
 vim.keymap.set("n", '<space>ca', code_actions, {})
 vim.keymap.set("v", '<space>ca', code_actions, {})
