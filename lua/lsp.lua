@@ -108,7 +108,7 @@ local function code_actions()
 
   local bufnr = vim.api.nvim_get_current_buf()
   local filetype = vim.bo[bufnr].filetype
-  local comment_prefix = languages[filetype].comment_prefix
+  local comment_prefix = ((languages[filetype] or {}).comment_prefix or "# ")
 
   local selection = {
     first = vim.fn.getpos("v"),

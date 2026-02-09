@@ -188,6 +188,25 @@ languages = {
   ["java"] = {
     files = { ".*[.]java" },
     comment_prefix = "//",
+    tree_sitter = {},
+  },
+
+  ["javascript"] = {
+    files = { ".*[.]js" },
+    comment_prefix = "//",
+    tree_sitter = {},
+  },
+
+  ["html"] = {
+    files = { ".*[.]html" },
+    comment_prefix = "//",
+    tree_sitter = {},
+  },
+
+  ["css"] = {
+    files = { ".*[.]css" },
+    -- TODO: comments
+    tree_sitter = {},
   },
 
   ["c"] = {
@@ -196,7 +215,7 @@ languages = {
       [".clang-format"] = "yaml",
     },
     comment_prefix = "//",
-
+    tree_sitter = {},
     lsp = {
       clangd = {}
     }
@@ -205,11 +224,13 @@ languages = {
   ["markdown"] = {
     files = { ".*[.]md" },
     comment_prefix = "#",
+    tree_sitter = {},
   },
 
   ["yaml"] = {
     files = { ".*[.]yaml", ".*[.]yml" },
     comment_prefix = "#",
+    tree_sitter = {},
   },
 
   ["zig"] = {
@@ -218,14 +239,13 @@ languages = {
     lsp = {
       zls = {},
     },
-
-    tree_sitter = {}
+    tree_sitter = {},
   },
 
   ["lua"] = {
     files = { ".*[.]lua" },
     comment_prefix = "--",
-
+    tree_sitter = {},
     lsp = {
       lua_ls = {
         on_init = function(client)
@@ -254,7 +274,7 @@ languages = {
   ["rust"] = {
     files = { ".*[.]rs" },
     comment_prefix = "//",
-
+    tree_sitter = {},
     lsp = {
       rust_analyzer = {}
     },
@@ -263,7 +283,7 @@ languages = {
   ["kotlin"] = {
     files = { ".*[.]kt", ".*[.]kts" },
     comment_prefix = "//",
-
+    tree_sitter = {},
     lsp = {
       kotlin_language_server = {},
     },
@@ -272,7 +292,7 @@ languages = {
   ["csharp"] = {
     files = { ".*[.]cs" },
     comment_prefix = "//",
-
+    tree_sitter = {},
     lsp = {
       csharp_ls = {},
     },
@@ -316,6 +336,7 @@ languages = {
   ["crepuscular"] = {
     files = { ".*[.]crr" },
     comment_prefix = "#",
+    tree_sitter = {},
   },
 
   ["asciidoc"] = {
@@ -327,7 +348,12 @@ languages = {
   ["python"] = {
     files = { ".*[.]py" },
     comment_prefix = "#",
-    tree_sitter = {}
+    tree_sitter = {},
+    lsp = {
+      ty = {
+        cmd = {"uvx", "ty", "server"},
+      },
+    },
   },
 
   ["ocamlinterface"] = {
@@ -359,6 +385,12 @@ languages = {
     files = { ".*[.]meson" },
     comment_prefix = "#",
     tree_sitter = {},
+  },
+
+  ["typst"] = {
+    files = { ".*[.]typ" },
+    comment_prefix = "//",
+    tree_sitter = {}
   },
 }
 
