@@ -221,6 +221,12 @@ languages = {
     }
   },
 
+  ["prolog"] = {
+    files = { ".*[.]p" },
+    comment_prefix = "%",
+    tree_sitter = {}
+  },
+
   ["markdown"] = {
     files = { ".*[.]md" },
     comment_prefix = "#",
@@ -278,6 +284,12 @@ languages = {
     lsp = {
       rust_analyzer = {}
     },
+  },
+
+  ["capnp"] = {
+    files = { ".*[.]capnp" },
+    comment_prefix = "#",
+    tree_sitter = {},
   },
 
   ["kotlin"] = {
@@ -339,6 +351,12 @@ languages = {
     tree_sitter = {},
   },
 
+  ["vxj"] = {
+    files = { ".*[.]vxj" },
+    comment_prefix = "//",
+    tree_sitter = {},
+  },
+
   ["asciidoc"] = {
     files = { ".*[.]adoc", ".*[.]txt" },
     comment_prefix = "//",
@@ -361,6 +379,13 @@ languages = {
     tree_sitter = { name = "ocaml_interface" },
     lsp = {
       ocamllsp = {}
+    },
+  },
+
+  ["why"] = {
+    files = { ".*[.]why", ".*[.]mlw" },
+    tree_sitter = {
+      name = "ocaml"
     },
   },
 
@@ -476,4 +501,4 @@ for lang, spec in pairs(languages) do
   end
 end
 
-require("ts_diagnostic")
+-- require("ts_diagnostic")
