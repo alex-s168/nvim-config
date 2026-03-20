@@ -191,6 +191,12 @@ languages = {
     tree_sitter = {},
   },
 
+  ["forth"] = {
+    files = { ".*[.]4th", ".*[.]forth" },
+    comment_prefix = "(",
+    tree_sitter = {}
+  },
+
   ["javascript"] = {
     files = { ".*[.]js" },
     comment_prefix = "//",
@@ -207,6 +213,17 @@ languages = {
     files = { ".*[.]css" },
     -- TODO: comments
     tree_sitter = {},
+  },
+
+  ["hare"] = {
+    files = { ".*[.]ha" },
+    comment_prefix = "//",
+    tree_sitter = {},
+
+    doc_provider = function(key)
+      local v = vim.fn.system("haredoc "..key)
+      return v and { text = v, lang = "hare" }
+    end
   },
 
   ["c"] = {
@@ -420,6 +437,72 @@ languages = {
 }
 
 
+local function get_treesitter_word_range()
+  local node = vim.treesitter.get_node()
+  if not node then return nil end
+
+  local s_row, s_col, e_row, e_col = node:range()
+  return {
+    start_row = s_row,
+    start_col = s_col,
+    end_row = e_row,
+    end_col = e_col
+  }
+end
+
+local function get_vim_word_range()
+  local line = vim.api.nvim_get_current_line()
+  local col = vim.api.nvim_win_get_cursor(0)[2] -- 0-indexed column
+
+  -- This finds the start and end of the word under the cursor
+  local word = vim.fn.expand('<cword>')
+  if word == "" then return nil end
+
+  -- Find the start of the word relative to the cursor
+  -- We search backwards from the cursor for the word start
+  local start_col = vim.fn.matchstrpos(line:sub(1, col + #word), [[\k*\%]] .. (col + 1) .. [[c\k*]])[2]
+  local end_col = vim.fn.matchstrpos(line:sub(1, col + #word), [[\k*\%]] .. (col + 1) .. [[c\k*]])[3]
+
+  return {
+    start_row = vim.api.nvim_win_get_cursor(0)[1] - 1,
+    start_col = start_col,
+    end_row =  vim.api.nvim_win_get_cursor(0)[1] - 1,
+    end_col = end_col
+  }
+end
+
+local function get_tagged_node_range(query, capture_name)
+  local bufnr = vim.api.nvim_get_current_buf()
+  local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+  row = row - 1 -- Treesitter uses 0-indexed rows
+
+  -- 1. Get the parser and the tree
+  local parser = vim.treesitter.get_parser(bufnr)
+  local tree = parser:parse()[1]
+  local root = tree:root()
+
+  -- 3. Iterate over matches
+  for id, node, _ in query:iter_captures(root, bufnr, row, row + 1) do
+    local name = query.captures[id] -- name of the capture (e.g., "my_tag")
+
+    if name == capture_name then
+      -- Check if the cursor is actually inside this specific node
+      if vim.treesitter.is_in_node_range(node, row, col) then
+        local s_row, s_col, e_row, e_col = node:range()
+        return {
+          start_row = s_row,
+          start_col = s_col,
+          end_row = e_row,
+          end_col = e_col
+        }
+      end
+    end
+  end
+  return nil
+end
+
+
+
 ----- init languages -----
 local blink = require("blink.cmp")
 local langMappedLsps = {}
@@ -487,10 +570,39 @@ for lang, spec in pairs(languages) do
       end
 
       ---- treesitter ----
+      local q_whole_ident = nil
       if spec.tree_sitter then
-        vim.treesitter.start(ev.buf, spec.tree_sitter.name or lang)
+        local ts_lang = spec.tree_sitter.name or lang
+        vim.treesitter.start(ev.buf, ts_lang)
         vim.cmd([[TSEnable highlight indent incremental_selection]])
+
+        q_whole_ident = vim.treesitter.query.get(ts_lang, "whole-identifier")
       end
+
+      vim.keymap.set('n', 'K', function()
+        local range = q_whole_ident and get_tagged_node_range(q_whole_ident, "whole-identifier")
+        range = range or get_treesitter_word_range()
+        range = range or get_vim_word_range()
+        
+        if range and (range.start_row ~= range.end_row or range.start_col ~= range.end_col) then
+          local lines = vim.api.nvim_buf_get_text(0, range.start_row, range.start_col, range.end_row, range.end_col, {})
+          local text = vim.trim(table.concat(lines, "\n"))
+
+          if #text then
+            local doc = spec.doc_provider and spec.doc_provider(text)
+            if doc then
+              local bufnr, winnr = vim.lsp.util.open_floating_preview(vim.split(doc.text, "\n"), doc.lang, {
+                border = "rounded",
+                focusable = true,
+                close_events = { "CursorMoved", "InsertEnter" },
+              })
+              vim.bo[bufnr].filetype = doc.lang
+            else
+              vim.cmd("Man " .. text)
+            end
+          end
+        end
+      end, { buffer = ev.buf })
     end
   })
   -------------------
